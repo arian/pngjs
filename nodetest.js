@@ -5,7 +5,7 @@ var Canvas = require('canvas');
 var fs = require("fs");
 var out = fs.createWriteStream(__dirname + '/test.png');
 
-var file = "html/ubuntu-grey.png";
+var file = "html/ubuntu.png";
 
 
 fs.readFile(file, function(err, bytes){
@@ -44,7 +44,7 @@ fs.readFile(file, function(err, bytes){
 			console.log('saved png');
 		});
 
-		console.log(png.getPixel(50, 50));
+		console.log(png.getPixel(10, 10));
 
 	});
 

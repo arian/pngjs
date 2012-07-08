@@ -194,24 +194,24 @@ PNGReader.prototype.interlaceNone = function(data){
 	// color bytes per row
 	var cpr = bpp * png.width;
 
-	// TODO: allocate correct size, use Buffer or Typed Arrays
-	var pixels = [];
+	var pixels = new Array(bpp * png.width * png.height);
 	var scanline, previous;
+	var offset = 0;
 
 	for (var i = 0; i < data.length; i += cpr + 1){
 
 		scanline = data.slice(i + 1, i + cpr + 1);
 
 		switch (readUInt8(data, i)){
-			case 0: this.filterNone(   scanline, previous, bpp, pixels); break;
-			case 1: this.filterSub(    scanline, previous, bpp, pixels); break;
-			case 2: this.filterUp(     scanline, previous, bpp, pixels); break;
-			case 3: this.filterAverage(scanline, previous, bpp, pixels); break;
-			case 4: this.filterPaeth(  scanline, previous, bpp, pixels); break;
+			case 0: this.filterNone(   scanline, pixels, bpp, offset, cpr); break;
+			case 1: this.filterSub(    scanline, pixels, bpp, offset, cpr); break;
+			case 2: this.filterUp(     scanline, pixels, bpp, offset, cpr); break;
+			case 3: this.filterAverage(scanline, pixels, bpp, offset, cpr); break;
+			case 4: this.filterPaeth(  scanline, pixels, bpp, offset, cpr); break;
 			default: throw new Error("unkown filtered scanline");
 		}
 
-		previous = scanline;
+		offset += cpr;
 
 	}
 
@@ -228,9 +228,9 @@ PNGReader.prototype.interlaceAdam7 = function(data){
 /**
  * No filtering, direct copy
  */
-PNGReader.prototype.filterNone = function(scanline, previous, bpp, pixels){
-	for (var i = 0, to = scanline.length; i < to; i++){
-		pixels.push(scanline[i]);
+PNGReader.prototype.filterNone = function(scanline, pixels, bpp, of, length){
+	for (var i = 0, to = length; i < to; i++){
+		pixels[of + i] = scanline[i];
 	}
 };
 
@@ -239,20 +239,13 @@ PNGReader.prototype.filterNone = function(scanline, previous, bpp, pixels){
  * of the corresponding byte of the prior pixel.
  * Sub(x) = Raw(x) + Raw(x - bpp)
  */
-PNGReader.prototype.filterSub = function(scanline, previous, bpp, pixels){
-	var i = 0, to = scanline.length;
-	// For all x < 0, assume Raw(x) = 0.
-	// so copy the first bytes
-	while (i < bpp){
-		pixels.push(scanline[i++] & 0xFF);
-	}
-	// and undo the sub filter
-	for (i = bpp; i < to; i++){
+PNGReader.prototype.filterSub = function(scanline, pixels, bpp, of, length){
+	for (var i = 0; i < length; i++){
 		// Raw(x)
 		var byte = scanline[i];
 		// Raw(x - bpp)
-		var prev = scanline[i - bpp];
-		pixels.push((byte + prev) & 0xFF);
+		var prev = (of + i - bpp) < of ? 0 : pixels[of + i - bpp];
+		pixels[of + i] = (byte + prev) & 0xFF;
 	}
 };
 
@@ -262,18 +255,15 @@ PNGReader.prototype.filterSub = function(scanline, previous, bpp, pixels){
  * as the predictor.
  * Up(x) = Raw(x) + Prior(x)
  */
-PNGReader.prototype.filterUp = function(scanline, previous, bpp, pixels){
-	var i = 0, to = scanline.length, byte, prev;
+PNGReader.prototype.filterUp = function(scanline, pixels, bpp, of, length){
+	var i = 0, byte, prev;
 	// Prior(x) is 0 for all x on the first scanline
-	if (previous) for (; i < to; i++){
+	for (; i < length; i++){
 		// Raw(x)
 		byte = scanline[i];
 		// Prior(x)
-		prev = previous[i];
-		pixels.push((byte + prev) & 0xFF);
-	} else while (i < to){
-		// Prior(x) == 0
-		pixels.push(scanline[i++] & 0xFF);
+		prev = (of + i - length) < 0 ? 0 : pixels[of + i - length];
+		pixels[of + i] = (byte + prev) & 0xFF;
 	}
 };
 
@@ -282,23 +272,16 @@ PNGReader.prototype.filterUp = function(scanline, previous, bpp, pixels){
  * and above) to predict the value of a pixel.
  * Average(x) = Raw(x) + floor((Raw(x-bpp)+Prior(x))/2)
  */
-PNGReader.prototype.filterAverage = function(scanline, previous, bpp, pixels){
-	var i = 0, to = scanline.length, byte, prev, prior;
-	if (previous) for (; i < to; i++){
+PNGReader.prototype.filterAverage = function(scanline, pixels, bpp, of, length){
+	var i = 0, byte, prev, prior;
+	for (; i < length; i++){
 		// Raw(x)
 		byte = scanline[i];
 		// Raw(x - bpp), Assume Raw(x) = 0 for x < 0
-		prev = (i - bpp) < 0 ? 0 : scanline[i - bpp];
-		prior = previous[i];
+		prev = (of + i - bpp) < of ? 0 : pixels[of + i - bpp];
+		prior = (of + i - length) < 0 ? 0 : pixels[of + i - length];
 		// right shift, prevent doubles by not using the / operator
-		pixels.push((byte + (prev + prior) >> 1) & 0xFF);
-	} else for (; i < to; i++){
-		// Prior(x) == 0, so Average(x) = Raw(x) + Raw(x - bpp)
-		// Raw(x)
-		byte = scanline[i];
-		// Raw(x - bpp), Assume Raw(x) = 0 for x < 0
-		prev = (i - bpp) < 0 ? 0 : scanline[i - bpp];
-		pixels.push((byte + prev) & 0xFF);
+		pixels[of + i] = (byte + (prev + prior) >> 1) & 0xFF;
 	}
 };
 
@@ -323,17 +306,17 @@ PNGReader.prototype.filterAverage = function(scanline, previous, bpp, pixels){
  *       else return c
  *  end
  */
-PNGReader.prototype.filterPaeth = function(scanline, previous, bpp, pixels){
-	var i = 0, to = scanline.length, raw, a, b, c, p, pa, pb, pc, pr;
-	for (; i < to; i++){
+PNGReader.prototype.filterPaeth = function(scanline, pixels, bpp, of, length){
+	var i = 0, raw, a, b, c, p, pa, pb, pc, pr;
+	for (; i < length; i++){
 		// Raw(x)
 		raw = scanline[i];
 		// a = Raw(x-bpp)
-		a = (i - bpp) < 0 ? 0 : scanline[i - bpp];
+		a = (of + i - bpp) < of ? 0 : pixels[of + i - bpp];
 		// b = Prior(x)
-		b = previous ? previous[i] : 0;
+		b = (of + i - length) < 0 ? 0 : pixels[of + i - length];
 		// c = Prior(x-bpp)
-		c = previous && (i - bpp) >= 0 ? previous[i - bpp] : 0;
+		c = (of + i - length - bpp) < (of - length) ? 0 : pixels[of + i - length - bpp];
 		// pr = PaethPredictor(a, b, c)
 		p = a + b - c;
 		pa = Math.abs(p - a);
@@ -342,7 +325,7 @@ PNGReader.prototype.filterPaeth = function(scanline, previous, bpp, pixels){
 		if (pa <= pb && pa <= pc) pr = a;
 		else if (pb <= pc) pr = b;
 		else pr = c;
-		pixels.push((raw + pr) & 0xFF);
+		pixels[of + i] = (raw + pr) & 0xFF;
 	}
 };
 
