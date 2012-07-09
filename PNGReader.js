@@ -203,11 +203,11 @@ PNGReader.prototype.interlaceNone = function(data){
 		scanline = data.slice(i + 1, i + cpr + 1);
 
 		switch (readUInt8(data, i)){
-			case 0: this.filterNone(   scanline, pixels, bpp, offset, cpr); break;
-			case 1: this.filterSub(    scanline, pixels, bpp, offset, cpr); break;
-			case 2: this.filterUp(     scanline, pixels, bpp, offset, cpr); break;
-			case 3: this.filterAverage(scanline, pixels, bpp, offset, cpr); break;
-			case 4: this.filterPaeth(  scanline, pixels, bpp, offset, cpr); break;
+			case 0: this.unFilterNone(   scanline, pixels, bpp, offset, cpr); break;
+			case 1: this.unFilterSub(    scanline, pixels, bpp, offset, cpr); break;
+			case 2: this.unFilterUp(     scanline, pixels, bpp, offset, cpr); break;
+			case 3: this.unFilterAverage(scanline, pixels, bpp, offset, cpr); break;
+			case 4: this.unFilterPaeth(  scanline, pixels, bpp, offset, cpr); break;
 			default: throw new Error("unkown filtered scanline");
 		}
 
@@ -223,12 +223,12 @@ PNGReader.prototype.interlaceAdam7 = function(data){
 	throw new Error("Adam7 interlacing is not implemented yet");
 };
 
-// Filters
+// Unfiltering
 
 /**
  * No filtering, direct copy
  */
-PNGReader.prototype.filterNone = function(scanline, pixels, bpp, of, length){
+PNGReader.prototype.unFilterNone = function(scanline, pixels, bpp, of, length){
 	for (var i = 0, to = length; i < to; i++){
 		pixels[of + i] = scanline[i];
 	}
@@ -239,7 +239,7 @@ PNGReader.prototype.filterNone = function(scanline, pixels, bpp, of, length){
  * of the corresponding byte of the prior pixel.
  * Sub(x) = Raw(x) + Raw(x - bpp)
  */
-PNGReader.prototype.filterSub = function(scanline, pixels, bpp, of, length){
+PNGReader.prototype.unFilterSub = function(scanline, pixels, bpp, of, length){
 	for (var i = 0; i < length; i++){
 		// Raw(x)
 		var byte = scanline[i];
@@ -255,7 +255,7 @@ PNGReader.prototype.filterSub = function(scanline, pixels, bpp, of, length){
  * as the predictor.
  * Up(x) = Raw(x) + Prior(x)
  */
-PNGReader.prototype.filterUp = function(scanline, pixels, bpp, of, length){
+PNGReader.prototype.unFilterUp = function(scanline, pixels, bpp, of, length){
 	var i = 0, byte, prev;
 	// Prior(x) is 0 for all x on the first scanline
 	for (; i < length; i++){
@@ -272,7 +272,7 @@ PNGReader.prototype.filterUp = function(scanline, pixels, bpp, of, length){
  * and above) to predict the value of a pixel.
  * Average(x) = Raw(x) + floor((Raw(x-bpp)+Prior(x))/2)
  */
-PNGReader.prototype.filterAverage = function(scanline, pixels, bpp, of, length){
+PNGReader.prototype.unFilterAverage = function(scanline, pixels, bpp, of, length){
 	var i = 0, byte, prev, prior;
 	for (; i < length; i++){
 		// Raw(x)
@@ -306,7 +306,7 @@ PNGReader.prototype.filterAverage = function(scanline, pixels, bpp, of, length){
  *       else return c
  *  end
  */
-PNGReader.prototype.filterPaeth = function(scanline, pixels, bpp, of, length){
+PNGReader.prototype.unFilterPaeth = function(scanline, pixels, bpp, of, length){
 	var i = 0, raw, a, b, c, p, pa, pb, pc, pr;
 	for (; i < length; i++){
 		// Raw(x)
