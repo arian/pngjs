@@ -5,7 +5,7 @@ var Canvas = require('canvas');
 var fs = require("fs");
 var out = fs.createWriteStream(__dirname + '/test.png');
 
-var file = __dirname + "/../html/f.png";
+var file = __dirname + "/../html/ubuntu-screenshot.png";
 
 fs.readFile(file, function(err, bytes){
 	if (err) throw err;

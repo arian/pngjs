@@ -4,7 +4,7 @@ var PNGReader = require('../PNGReader');
 var fs = require("fs");
 var profiler = require('profiler');
 
-var file = __dirname + "/../html/ubuntu.png";
+var file = __dirname + "/../html/ubuntu-screenshot.png";
 
 fs.readFile(file, function(err, bytes){
 	if (err) throw err;
