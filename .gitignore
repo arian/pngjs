@@ -1,3 +1,4 @@
 node_modules/
 test.png
 png-js-test.js
+v8*
