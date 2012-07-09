@@ -195,7 +195,7 @@ PNGReader.prototype.interlaceNone = function(data){
 	var cpr = bpp * png.width;
 
 	var pixels = new Buffer(bpp * png.width * png.height);
-	var scanline, previous;
+	var scanline;
 	var offset = 0;
 
 	for (var i = 0; i < data.length; i += cpr + 1){
@@ -244,7 +244,7 @@ PNGReader.prototype.unFilterSub = function(scanline, pixels, bpp, of, length){
 		// Raw(x)
 		var byte = scanline[i];
 		// Raw(x - bpp)
-		var prev = (of + i - bpp) < of ? 0 : pixels[of + i - bpp];
+		var prev = (i - bpp) < 0 ? 0 : pixels[of + i - bpp];
 		pixels[of + i] = (byte + prev) & 0xFF;
 	}
 };
@@ -278,7 +278,7 @@ PNGReader.prototype.unFilterAverage = function(scanline, pixels, bpp, of, length
 		// Raw(x)
 		byte = scanline[i];
 		// Raw(x - bpp), Assume Raw(x) = 0 for x < 0
-		prev = (of + i - bpp) < of ? 0 : pixels[of + i - bpp];
+		prev = (i - bpp) < 0 ? 0 : pixels[of + i - bpp];
 		prior = (of + i - length) < 0 ? 0 : pixels[of + i - length];
 		// right shift, prevent doubles by not using the / operator
 		pixels[of + i] = (byte + (prev + prior) >> 1) & 0xFF;
@@ -312,11 +312,11 @@ PNGReader.prototype.unFilterPaeth = function(scanline, pixels, bpp, of, length){
 		// Raw(x)
 		raw = scanline[i];
 		// a = Raw(x-bpp)
-		a = (of + i - bpp) < of ? 0 : pixels[of + i - bpp];
+		a = (i - bpp) < 0 ? 0 : pixels[of + i - bpp];
 		// b = Prior(x)
 		b = (of + i - length) < 0 ? 0 : pixels[of + i - length];
 		// c = Prior(x-bpp)
-		c = (of + i - length - bpp) < (of - length) ? 0 : pixels[of + i - length - bpp];
+		c = (i - bpp) < 0 ? 0 : pixels[of + i - length - bpp];
 		// pr = PaethPredictor(a, b, c)
 		p = a + b - c;
 		pa = Math.abs(p - a);
