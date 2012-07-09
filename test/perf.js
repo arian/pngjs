@@ -11,8 +11,14 @@ fs.readFile(file, function(err, bytes){
 
 	profiler.resume();
 
+	var t = process.hrtime();
+
 	var reader = new PNGReader(bytes);
 	reader.parse(function(png){
+
+		t = process.hrtime(t);
+
+		console.log('benchmark took %d seconds and %d ms', t[0], t[1] / 1e6);
 
 		console.log('pixels', png.pixels.length);
 		console.log('width', png.width, 'height', png.height, 'colors', png.colors);

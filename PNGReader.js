@@ -240,12 +240,11 @@ PNGReader.prototype.unFilterNone = function(scanline, pixels, bpp, of, length){
  * Sub(x) = Raw(x) + Raw(x - bpp)
  */
 PNGReader.prototype.unFilterSub = function(scanline, pixels, bpp, of, length){
-	for (var i = 0; i < length; i++){
-		// Raw(x)
-		var byte = scanline[i];
-		// Raw(x - bpp)
-		var prev = (i - bpp) < 0 ? 0 : pixels[of + i - bpp];
-		pixels[of + i] = (byte + prev) & 0xFF;
+	var i = 0;
+	for (; i < bpp; i++) pixels[of + i] = scanline[i];
+	for (; i < length; i++){
+		// Raw(x) + Raw(x - bpp)
+		pixels[of + i] = (scanline[i] + pixels[of + i - bpp]) & 0xFF;
 	}
 };
 
@@ -258,11 +257,13 @@ PNGReader.prototype.unFilterSub = function(scanline, pixels, bpp, of, length){
 PNGReader.prototype.unFilterUp = function(scanline, pixels, bpp, of, length){
 	var i = 0, byte, prev;
 	// Prior(x) is 0 for all x on the first scanline
-	for (; i < length; i++){
+	if ((of - length) < 0) for (; i < length; i++){
+		pixels[of + i] = scanline[i];
+	} else for (; i < length; i++){
 		// Raw(x)
 		byte = scanline[i];
 		// Prior(x)
-		prev = (of + i - length) < 0 ? 0 : pixels[of + i - length];
+		prev = pixels[of + i - length];
 		pixels[of + i] = (byte + prev) & 0xFF;
 	}
 };
@@ -274,14 +275,27 @@ PNGReader.prototype.unFilterUp = function(scanline, pixels, bpp, of, length){
  */
 PNGReader.prototype.unFilterAverage = function(scanline, pixels, bpp, of, length){
 	var i = 0, byte, prev, prior;
-	for (; i < length; i++){
-		// Raw(x)
-		byte = scanline[i];
-		// Raw(x - bpp), Assume Raw(x) = 0 for x < 0
-		prev = (i - bpp) < 0 ? 0 : pixels[of + i - bpp];
-		prior = (of + i - length) < 0 ? 0 : pixels[of + i - length];
-		// right shift, prevent doubles by not using the / operator
-		pixels[of + i] = (byte + (prev + prior) >> 1) & 0xFF;
+	if ((of - length) < 0){
+		// Prior(x) == 0 && Raw(x - bpp) == 0
+		for (; i < bpp; i++){
+			pixels[of + i] = scanline[i];
+		}
+		// Prior(x) == 0 && Raw(x - bpp) != 0 (right shift, prevent doubles)
+		for (; i < length; i++){
+			pixels[of + i] = (scanline[i] + (pixels[of + i - bpp] >> 1)) & 0xFF;
+		}
+	} else {
+		// Prior(x) != 0 && Raw(x - bpp) == 0
+		for (; i < bpp; i++){
+			pixels[of + i] = (scanline[i] + (pixels[of - length + i] >> 1)) & 0xFF;
+		}
+		// Prior(x) != 0 && Raw(x - bpp) != 0
+		for (; i < length; i++){
+			byte = scanline[i];
+			prev = pixels[of + i - bpp];
+			prior = pixels[of + i - length];
+			pixels[of + i] = (byte + (prev + prior >> 1)) & 0xFF;
+		}
 	}
 };
 
@@ -308,24 +322,37 @@ PNGReader.prototype.unFilterAverage = function(scanline, pixels, bpp, of, length
  */
 PNGReader.prototype.unFilterPaeth = function(scanline, pixels, bpp, of, length){
 	var i = 0, raw, a, b, c, p, pa, pb, pc, pr;
-	for (; i < length; i++){
-		// Raw(x)
-		raw = scanline[i];
-		// a = Raw(x-bpp)
-		a = (i - bpp) < 0 ? 0 : pixels[of + i - bpp];
-		// b = Prior(x)
-		b = (of + i - length) < 0 ? 0 : pixels[of + i - length];
-		// c = Prior(x-bpp)
-		c = (i - bpp) < 0 ? 0 : pixels[of + i - length - bpp];
-		// pr = PaethPredictor(a, b, c)
-		p = a + b - c;
-		pa = Math.abs(p - a);
-		pb = Math.abs(p - b);
-		pc = Math.abs(p - c);
-		if (pa <= pb && pa <= pc) pr = a;
-		else if (pb <= pc) pr = b;
-		else pr = c;
-		pixels[of + i] = (raw + pr) & 0xFF;
+	if ((of - length) < 0){
+		// Prior(x) == 0 && Raw(x - bpp) == 0
+		for (; i < bpp; i++){
+			pixels[of + i] = scanline[i];
+		}
+		// Prior(x) == 0 && Raw(x - bpp) != 0
+		// paethPredictor(x, 0, 0) is always x
+		for (; i < length; i++){
+			pixels[of + i] = (scanline[i] + pixels[of + i - bpp]) & 0xFF;
+		}
+	} else {
+		// Prior(x) != 0 && Raw(x - bpp) == 0
+		// paethPredictor(x, 0, 0) is always x
+		for (; i < bpp; i++){
+			pixels[of + i] = (scanline[i] + pixels[of + i - length]) & 0xFF;
+		}
+		// Prior(x) != 0 && Raw(x - bpp) != 0
+		for (; i < length; i++){
+			raw = scanline[i];
+			a = pixels[of + i - bpp];
+			b = pixels[of + i - length];
+			c = pixels[of + i - length - bpp];
+			p = a + b - c;
+			pa = Math.abs(p - a);
+			pb = Math.abs(p - b);
+			pc = Math.abs(p - c);
+			if (pa <= pb && pa <= pc) pr = a;
+			else if (pb <= pc) pr = b;
+			else pr = c;
+			pixels[of + i] = (raw + pr) & 0xFF;
+		}
 	}
 };
 
