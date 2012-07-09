@@ -1,12 +1,11 @@
 "use strict";
 
-var PNGReader = require('./PNGReader');
+var PNGReader = require('../PNGReader');
 var Canvas = require('canvas');
 var fs = require("fs");
 var out = fs.createWriteStream(__dirname + '/test.png');
 
-var file = "html/ubuntu.png";
-
+var file = __dirname + "/../html/f.png";
 
 fs.readFile(file, function(err, bytes){
 	if (err) throw err;
@@ -14,9 +13,8 @@ fs.readFile(file, function(err, bytes){
 	var reader = new PNGReader(bytes);
 	reader.parse(function(png){
 
-//		console.log(png.getPixel(545, 30));
-		console.log(png.pixels.length);
-		console.log(png.width, png.height, png.colors);
+		console.log('pixels', png.pixels.length);
+		console.log('width', png.width, 'height', png.height, 'colors', png.colors);
 		console.log('colorType', png.colorType);
 		console.log('bitDepth', png.bitDepth);
 		console.log('colors', png.colors);
@@ -28,9 +26,7 @@ fs.readFile(file, function(err, bytes){
 		for (var x = 0; x < png.width; x++){
 			for (var y = 0; y < png.height; y++){
 				var colors = png.getPixel(x, y);
-//				if (colors[3] > 0) console.log(colors[3]);
 				var fillStyle = "rgba(" + colors.slice(0, 3).join(',') + ", " + colors[3] / 255 + ")";
-//				console.log(fillStyle);
 				ctx.fillStyle = fillStyle;
 				ctx.fillRect(x, y, 1, 1);
 			}
@@ -43,11 +39,6 @@ fs.readFile(file, function(err, bytes){
 		stream.on('end', function(){
 			console.log('saved png');
 		});
-
-		console.log(png.getPixel(10, 10));
-
 	});
 
 });
-
-
