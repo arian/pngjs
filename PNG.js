@@ -12,7 +12,7 @@ var PNG = function(){
 	this.interlaceMethod = 0;
 
 	this.colors = 0;
-	this.hasAlphaChannel = false;
+	this.alpha = false;
 	this.pixelBits = 0;
 
 	this.palette = null;
@@ -69,19 +69,19 @@ PNG.prototype.setColorType = function(colorType){
 	//   6       8,16        Each pixel is an R,G,B triple,
 	//                       followed by an alpha sample.
 
-	var colors = 0, hasAlphaChannel = false;
+	var colors = 0, alpha = false;
 
 	switch (colorType){
 		case 0: colors = 1; break;
 		case 2: colors = 3; break;
 		case 3: colors = 1; break;
-		case 4: colors = 2; hasAlphaChannel = true; break;
-		case 6: colors = 4; hasAlphaChannel = true; break;
+		case 4: colors = 2; alpha = true; break;
+		case 6: colors = 4; alpha = true; break;
 		default: throw new Error("invalid color type");
 	}
 
 	this.colors = colors;
-	this.hasAlphaChannel = hasAlphaChannel;
+	this.alpha = alpha;
 	this.colorType = colorType;
 };
 
