@@ -3,6 +3,9 @@
   "name": "png.js",
   "description": "A PNG decoder fully written in JavaScript",
   "version": "0.0.1",
+  "repository": {
+    "url": "git://github.com/arian/pngjs.git"
+  },
   "main": "PNGReader.js",
   "dependencies": {},
   "devDependencies": {
