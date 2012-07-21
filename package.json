@@ -4,9 +4,7 @@
   "description": "A PNG decoder for JS",
   "version": "0.0.0",
   "main": "PNGReader.js",
-  "dependencies": {
-    "crc32": "0.2"
-  },
+  "dependencies": {},
   "devDependencies": {},
   "optionalDependencies": {},
   "engines": {

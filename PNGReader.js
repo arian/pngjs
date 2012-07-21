@@ -1,7 +1,39 @@
+/*global Uint8Array:true ArrayBuffer:true */
 "use strict";
 
 var PNG = require('./PNG');
-var zlib = require('zlib');
+
+var isNode = false && typeof process !== 'undefined';
+
+var inflate = (function(){
+	if (isNode){
+		var zlib = require('zlib');
+		return function(data, callback){
+			return zlib.inflate(new Buffer(data), callback);
+		};
+	} else {
+		var stream = require('./stream');
+		return function(data, callback){
+			data = new stream.FlateStream(new stream.Stream(data));
+			callback(null, data.getBytes());
+		};
+	}
+})();
+
+var ByteBuffer = isNode ? Buffer : (function(){
+	if (typeof ArrayBuffer == 'function'){
+		return function(length){
+			return new Uint8Array(new ArrayBuffer(length));
+		};
+	} else {
+		return function(length){
+			return new Array(length);
+		};
+	}
+})();
+
+var slice = Array.prototype.slice;
+var toString = Object.prototype.toString;
 
 function equalBytes(a, b){
 	if (a.length != b.length) return false;
@@ -40,6 +72,9 @@ var PNGReader = function(bytes){
 		for (var i = 0, l = bts.length; i < l; i++){
 			bytes[i] = bts[i].charCodeAt(0);
 		}
+	} else {
+		var type = toString.call(bytes).slice(8, -1);
+		if (type == 'ArrayBuffer') bytes = new Uint8Array(bytes);
 	}
 
 	// current pointer
@@ -49,7 +84,7 @@ var PNGReader = function(bytes){
 	// Output object
 	this.png = new PNG();
 
-	this.imgData = [];
+	this.dataChunks = [];
 
 };
 
@@ -58,7 +93,7 @@ PNGReader.prototype.readBytes = function(length){
 	if (end > this.bytes.length){
 		throw new Error('Unexpectedly reached end of file');
 	}
-	var bytes = this.bytes.slice(this.i, end);
+	var bytes = slice.call(this.bytes, this.i, end);
 	this.i = end;
 	return bytes;
 };
@@ -150,10 +185,8 @@ PNGReader.prototype.decodePLTE = function(chunk){
  * http://www.w3.org/TR/2003/REC-PNG-20031110/#11IDAT
  */
 PNGReader.prototype.decodeIDAT = function(chunk){
-	// multiple IDAT chunks are concatenated
-	for (var i = 0; i < chunk.length; i++){
-		this.imgData.push(chunk[i]);
-	}
+	// multiple IDAT chunks will concatenated
+	this.dataChunks.push(chunk);
 };
 
 /**
@@ -168,9 +201,16 @@ PNGReader.prototype.decodeIEND = function(){
 PNGReader.prototype.decodePixels = function(callback){
 	var png = this.png;
 	var reader = this;
-	zlib.inflate(new Buffer(this.imgData), function(err, data){
+	var length = 0;
+	var i, j, k, l;
+	for (l = this.dataChunks.length; l--;) length += this.dataChunks[l].length;
+	var data = new ByteBuffer(length);
+	for (i = 0, k = 0, l = this.dataChunks.length; i < l; i++){
+		var chunk = this.dataChunks[i];
+		for (j = 0; j < chunk.length; j++) data[k++] = chunk[j];
+	}
+	inflate(data, function(err, data){
 		if (err) throw err;
-
 		if (png.getInterlaceMethod() === 0){
 			reader.interlaceNone(data);
 		} else {
@@ -194,13 +234,13 @@ PNGReader.prototype.interlaceNone = function(data){
 	// color bytes per row
 	var cpr = bpp * png.width;
 
-	var pixels = new Buffer(bpp * png.width * png.height);
+	var pixels = new ByteBuffer(bpp * png.width * png.height);
 	var scanline;
 	var offset = 0;
 
 	for (var i = 0; i < data.length; i += cpr + 1){
 
-		scanline = data.slice(i + 1, i + cpr + 1);
+		scanline = slice.call(data, i + 1, i + cpr + 1);
 
 		switch (readUInt8(data, i)){
 			case 0: this.unFilterNone(   scanline, pixels, bpp, offset, cpr); break;

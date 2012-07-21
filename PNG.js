@@ -133,7 +133,7 @@ PNG.prototype.getPalette = function(){
 };
 
 /**
- * get the pixel color on a certain location
+ * get the pixel color on a certain location in a normalized way
  * result is an array: [red, green, blue, alpha]
  */
 PNG.prototype.getPixel = function(x, y){
@@ -142,7 +142,7 @@ PNG.prototype.getPixel = function(x, y){
 		throw new Error("x,y position out of bound");
 	}
 	var i = this.colors * this.bitDepth / 8 * (y * this.width + x);
-	var colors = this.pixels.slice(i, i + this.colors);
+	var colors = Array.prototype.slice.call(this.pixels, i, i + this.colors);
 
 	switch (this.colorType){
 		case 0: return [colors[0], colors[0], colors[0], 255];

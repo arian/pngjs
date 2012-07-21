@@ -7,9 +7,11 @@
 </head>
 <body>
 
-<img src="ubuntu.png" alt="Ubuntu">
+<div>
+	<input type="file" id="file">
+</div>
 
-<input type="file" id="file">
+<canvas width="800" height="550" id="canvas"></canvas>
 
 <script>
 
@@ -18,16 +20,44 @@ var reader = new FileReader();
 reader.onload = function(event){
 	var bytes = event.target.result;
 	var pngReader = new PNGReader(bytes);
-	var png = pngReader.parse();
-
-	console.log(png);
-
+	pngReader.parse(function(png){
+		console.log('image is <' + png.width + ',' + png.height +'>');
+		console.log(png);
+		drawOnCanvas(png);
+	});
 };
 
 var file = document.getElementById('file');
 file.onchange = function(event){
-	console.log(file.files);
-	reader.readAsBinaryString(file.files[0]);
+	reader.readAsArrayBuffer(file.files[0]);
+}
+
+var drawOnCanvas = function(png){
+	var canvas = document.getElementById('canvas');
+	var ctx = canvas.getContext('2d');
+	var canvasWidth = canvas.width;
+	var canvasHeight = canvas.height;
+	var canvasData = ctx.getImageData(0, 0, canvasWidth, canvasHeight);
+	var i = 0;
+
+	var width = Math.min(png.width, canvasWidth);
+	var height = Math.min(png.height, canvasHeight);
+
+	for (var y = 0; y < height; y++){
+		for (var x = 0; x < width; x++){
+			var colors = png.getPixel(x, y);
+			canvasData.data[i++] = colors[0];
+			canvasData.data[i++] = colors[1];
+			canvasData.data[i++] = colors[2];
+			canvasData.data[i++] = colors[3];
+		}
+		// move index to the next line
+		var d = canvasWidth - width;
+		if (d > 0) i += d * 4;
+	}
+
+	ctx.putImageData(canvasData, 0, 0);
+
 }
 
 </script>
