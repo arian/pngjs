@@ -1,11 +1,13 @@
 {
   "author": "Arian Stolwijk",
-  "name": "PNG.js",
-  "description": "A PNG decoder for JS",
+  "name": "png.js",
+  "description": "A PNG decoder fully written in JavaScript",
   "version": "0.0.0",
   "main": "PNGReader.js",
   "dependencies": {},
-  "devDependencies": {},
+  "devDependencies": {
+    "wrapup": "0.9.10"
+  },
   "optionalDependencies": {},
   "engines": {
     "node": "*"

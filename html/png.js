@@ -15,7 +15,7 @@
         var PNG = require("1");
         var isNode = false && typeof process !== "undefined";
         var inflate = function() {
-            if (false && isNode) {
+            if (isNode) {
                 var zlib = null;
                 return function(data, callback) {
                     return zlib.inflate(new Buffer(data), callback);
@@ -76,7 +76,7 @@
             this.i = 0;
             this.bytes = bytes;
             this.png = new PNG;
-            this.imgData = [];
+            this.dataChunks = [];
         };
         PNGReader.prototype.readBytes = function(length) {
             var end = this.i + length;
@@ -135,15 +135,21 @@
             this.png.setPalette(chunk);
         };
         PNGReader.prototype.decodeIDAT = function(chunk) {
-            for (var i = 0; i < chunk.length; i++) {
-                this.imgData.push(chunk[i]);
-            }
+            this.dataChunks.push(chunk);
         };
         PNGReader.prototype.decodeIEND = function() {};
         PNGReader.prototype.decodePixels = function(callback) {
             var png = this.png;
             var reader = this;
-            inflate(this.imgData, function(err, data) {
+            var length = 0;
+            var i, j, k, l;
+            for (l = this.dataChunks.length; l--; ) length += this.dataChunks[l].length;
+            var data = new ByteBuffer(length);
+            for (i = 0, k = 0, l = this.dataChunks.length; i < l; i++) {
+                var chunk = this.dataChunks[i];
+                for (j = 0; j < chunk.length; j++) data[k++] = chunk[j];
+            }
+            inflate(data, function(err, data) {
                 if (err) throw err;
                 if (png.getInterlaceMethod() === 0) {
                     reader.interlaceNone(data);
