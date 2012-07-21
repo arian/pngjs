@@ -60,6 +60,21 @@ var drawOnCanvas = function(png){
 
 }
 
+var xhr = new XMLHttpRequest();
+xhr.open('GET', 'f.png', true);
+xhr.responseType = 'arraybuffer';
+
+xhr.onload = function(e){
+	if (this.status == 200){
+		var reader = new PNGReader(this.response);
+		reader.parse(function(png){
+			console.log(png);
+		});
+	}
+};
+
+xhr.send();
+
 </script>
 
 </body>

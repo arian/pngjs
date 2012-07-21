@@ -52,3 +52,75 @@ png.getInterlaceMethod();
 png.getPalette();
 ```
 
+Using PNGReader in Node.js
+--------------------------
+
+PNGReader accepts an `Buffer` object, returned by `fs.readFile`, for example:
+
+``` js
+fs.readFile('test.png', function(err, buffer){
+
+	var reader = new PNGReader(buffer);
+	reader.parse(function(png){
+		console.log(png);
+	});
+
+});
+```
+
+Using PNGReader in the Browser
+------------------------------
+
+PNGReader accepts a byte string, array of bytes or an ArrayBuffer.
+
+For example using FileReader with file input fields:
+
+```js
+var reader = new FileReader();
+
+reader.onload = function(event){
+	var reader = new PNGReader(event.target.result);
+	reader.parse(function(png){
+		console.log(png);
+	});
+};
+
+fileInputElement.onchange = function(){
+	reader.readAsArrayBuffer(fileInputElement.files[0]);
+	// or, but less optimal
+	reader.readAsBinaryString(fileInputElement.files[0]);
+};
+```
+
+Or instead of using input elements, XHR can also be used:
+
+```js
+var xhr = new XMLHttpRequest();
+xhr.open('GET', 'image.png', true);
+xhr.responseType = 'arraybuffer';
+
+xhr.onload = function(e){
+	if (this.status == 200){
+		var reader = new PNGReader(this.response);
+		reader.parse(function(png){
+			console.log(png);
+		});
+	}
+};
+
+xhr.send();
+```
+
+Building Browser Version
+------------------------
+
+PNG.js uses CommonJS modules which can be used in browsers after building it
+with [wrapup](github.com/kamicane/wrapup):
+
+	wrup -r PNGReader ./PNGReader.js
+
+	# or with the predefined make commands
+	make build-browser
+	make build-browser-min
+
+
