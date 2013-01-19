@@ -3,7 +3,7 @@
 
 var PNG = require('./PNG');
 
-var isNode = typeof process !== 'undefined';
+var isNode = typeof process !== 'undefined' && !process.browser;
 
 var inflate = (function(){
 	if (isNode){
