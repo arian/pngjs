@@ -20,7 +20,8 @@ var reader = new FileReader();
 reader.onload = function(event){
 	var bytes = event.target.result;
 	var pngReader = new PNGReader(bytes);
-	pngReader.parse(function(png){
+	pngReader.parse(function(err, png){
+		if (err) throw err;
 		console.log('image is <' + png.width + ',' + png.height +'>');
 		console.log(png);
 		drawOnCanvas(png);
@@ -67,7 +68,8 @@ xhr.responseType = 'arraybuffer';
 xhr.onload = function(e){
 	if (this.status == 200){
 		var reader = new PNGReader(this.response);
-		reader.parse(function(png){
+		reader.parse(function(err, png){
+			if (err) throw err;
 			console.log(png);
 		});
 	}

@@ -12,7 +12,8 @@ Usage
 var PNGReader = require('png.js');
 
 var reader = new PNGReader(bytes);
-reader.parse(function(png){
+reader.parse(function(err, png){
+	if (err) throw err;
 	console.log(png);
 });
 
@@ -23,7 +24,8 @@ Or with options:
 ``` js
 reader.parse({
 	data: false
-}, function(png){
+}, function(err, png){
+	if (err) throw err;
 	console.log(png);
 });
 
@@ -61,7 +63,8 @@ PNGReader accepts an `Buffer` object, returned by `fs.readFile`, for example:
 fs.readFile('test.png', function(err, buffer){
 
 	var reader = new PNGReader(buffer);
-	reader.parse(function(png){
+	reader.parse(function(err, png){
+		if (err) throw err;
 		console.log(png);
 	});
 
@@ -80,7 +83,8 @@ var reader = new FileReader();
 
 reader.onload = function(event){
 	var reader = new PNGReader(event.target.result);
-	reader.parse(function(png){
+	reader.parse(function(err, png){
+		if (err) throw err;
 		console.log(png);
 	});
 };
@@ -102,7 +106,8 @@ xhr.responseType = 'arraybuffer';
 xhr.onload = function(e){
 	if (this.status == 200){
 		var reader = new PNGReader(this.response);
-		reader.parse(function(png){
+		reader.parse(function(err, png){
+			if (err) throw err;
 			console.log(png);
 		});
 	}
@@ -115,12 +120,11 @@ Building Browser Version
 ------------------------
 
 PNG.js uses CommonJS modules which can be used in browsers after building it
-with [wrapup](github.com/kamicane/wrapup):
+with [wrapup](https://github.com/mootools/wrapup):
 
 	wrup -r PNGReader ./PNGReader.js
 
 	# or with the predefined make commands
 	make build-browser
 	make build-browser-min
-
 

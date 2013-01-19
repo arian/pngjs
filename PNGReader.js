@@ -210,15 +210,19 @@ PNGReader.prototype.decodePixels = function(callback){
 		for (j = 0; j < chunk.length; j++) data[k++] = chunk[j];
 	}
 	inflate(data, function(err, data){
-		if (err) throw err;
-		if (png.getInterlaceMethod() === 0){
-			reader.interlaceNone(data);
-		} else {
-			reader.interlaceAdam7(data);
+		if (err) return callback(err);
+
+		try {
+			if (png.getInterlaceMethod() === 0){
+				reader.interlaceNone(data);
+			} else {
+				reader.interlaceAdam7(data);
+			}
+		} catch (e){
+			return callback(e);
 		}
 
 		callback();
-
 	});
 };
 
@@ -413,19 +417,25 @@ PNGReader.prototype.parse = function(options, callback){
 	if (typeof options == 'function') callback = options;
 	if (typeof options != 'object') options = {};
 
-	this.decodeHeader();
+	try {
 
-	while (this.i < this.bytes.length){
-		var type = this.decodeChunk();
-		// stop after IHDR chunk, or after IEND
-		if (type == 'IHDR' && options.data === false || type == 'IEND') break;
+		this.decodeHeader();
+
+		while (this.i < this.bytes.length){
+			var type = this.decodeChunk();
+			// stop after IHDR chunk, or after IEND
+			if (type == 'IHDR' && options.data === false || type == 'IEND') break;
+		}
+
+		var png = this.png;
+
+		this.decodePixels(function(err){
+			callback(err, png);
+		});
+
+	} catch (e){
+		callback(e);
 	}
-
-	var png = this.png;
-
-	this.decodePixels(function(){
-		callback(png);
-	});
 
 };
 

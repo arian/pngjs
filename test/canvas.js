@@ -11,7 +11,8 @@ fs.readFile(file, function(err, bytes){
 	if (err) throw err;
 
 	var reader = new PNGReader(bytes);
-	reader.parse(function(png){
+	reader.parse(function(err, png){
+		if (err) throw err;
 
 		console.log('pixels', png.pixels.length);
 		console.log('width', png.width, 'height', png.height, 'colors', png.colors);
