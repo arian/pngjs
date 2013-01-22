@@ -142,20 +142,19 @@ PNG.prototype.getPixel = function(x, y){
 		throw new Error("x,y position out of bound");
 	}
 	var i = this.colors * this.bitDepth / 8 * (y * this.width + x);
-	var colors = Array.prototype.slice.call(this.pixels, i, i + this.colors);
+	var pixels = this.pixels;
 
 	switch (this.colorType){
-		case 0: return [colors[0], colors[0], colors[0], 255];
-		case 2: return [colors[0], colors[1], colors[2], 255];
+		case 0: return [pixels[i], pixels[i], pixels[i], 255];
+		case 2: return [pixels[i], pixels[i + 1], pixels[i + 2], 255];
 		case 3: return [
-			this.palette[colors[0] * 3 + 0],
-			this.palette[colors[0] * 3 + 1],
-			this.palette[colors[0] * 3 + 2],
+			this.palette[pixels[i] * 3 + 0],
+			this.palette[pixels[i] * 3 + 1],
+			this.palette[pixels[i] * 3 + 2],
 			255];
-		case 4: return [colors[0], colors[0], colors[0], colors[1]];
-		case 6: return [colors[0], colors[1], colors[2], colors[3]];
+		case 4: return [pixels[i], pixels[i], pixels[i], pixels[i + 1]];
+		case 6: return [pixels[i], pixels[i + 1], pixels[i + 2], pixels[i + 3]];
 	}
-
 };
 
 module.exports = PNG;

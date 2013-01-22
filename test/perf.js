@@ -2,19 +2,16 @@
 
 var PNGReader = require('../PNGReader');
 var fs = require("fs");
-var profiler = require('profiler');
 
 var file = __dirname + "/../html/ubuntu-screenshot.png";
 
 fs.readFile(file, function(err, bytes){
 	if (err) throw err;
 
-	profiler.resume();
-
 	var t = process.hrtime();
 
 	var reader = new PNGReader(bytes);
-	reader.parse(function(png){
+	reader.parse(function(err, png){
 
 		t = process.hrtime(t);
 
@@ -25,6 +22,17 @@ fs.readFile(file, function(err, bytes){
 		console.log('colorType', png.colorType);
 		console.log('bitDepth', png.bitDepth);
 		console.log('colors', png.colors);
+
+		t = process.hrtime();
+
+		for (var i = 0; i < png.width; i++){
+			for (var j = 0; j < png.height; j++){
+				png.getPixel(i, j);
+			}
+		}
+
+		t = process.hrtime(t);
+		console.log('getPixel benchmark took %d seconds and %d ms', t[0], t[1] / 1e6);
 
 	});
 
