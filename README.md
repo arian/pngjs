@@ -120,11 +120,6 @@ Building Browser Version
 ------------------------
 
 PNG.js uses CommonJS modules which can be used in browsers after building it
-with [wrapup](https://github.com/mootools/wrapup):
+with [browserify](http://browserify.org/):
 
-	wrup -r PNGReader ./PNGReader.js
-
-	# or with the predefined make commands
-	make build-browser
-	make build-browser-min
-
+	browserify ./PNGReader.js -s PNGReader

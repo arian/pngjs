@@ -1,36 +1,12 @@
 /*global Uint8Array:true ArrayBuffer:true */
 "use strict";
 
+var zlib = require('zlib');
 var PNG = require('./PNG');
 
-var isNode = typeof process !== 'undefined' && !process.browser;
-
-var inflate = (function(){
-	if (isNode){
-		var zlib = require('zlib');
-		return function(data, callback){
-			return zlib.inflate(new Buffer(data), callback);
-		};
-	} else {
-		var stream = require('./stream');
-		return function(data, callback){
-			data = new stream.FlateStream(new stream.Stream(data));
-			callback(null, data.getBytes());
-		};
-	}
-})();
-
-var ByteBuffer = isNode ? Buffer : (function(){
-	if (typeof ArrayBuffer == 'function'){
-		return function(length){
-			return new Uint8Array(new ArrayBuffer(length));
-		};
-	} else {
-		return function(length){
-			return new Array(length);
-		};
-	}
-})();
+var inflate = function(data, callback){
+	return zlib.inflate(new Buffer(data), callback);
+};
 
 var slice = Array.prototype.slice;
 var toString = Object.prototype.toString;
@@ -204,7 +180,7 @@ PNGReader.prototype.decodePixels = function(callback){
 	var length = 0;
 	var i, j, k, l;
 	for (l = this.dataChunks.length; l--;) length += this.dataChunks[l].length;
-	var data = new ByteBuffer(length);
+	var data = new Buffer(length);
 	for (i = 0, k = 0, l = this.dataChunks.length; i < l; i++){
 		var chunk = this.dataChunks[i];
 		for (j = 0; j < chunk.length; j++) data[k++] = chunk[j];
@@ -238,7 +214,7 @@ PNGReader.prototype.interlaceNone = function(data){
 	// color bytes per row
 	var cpr = bpp * png.width;
 
-	var pixels = new ByteBuffer(bpp * png.width * png.height);
+	var pixels = new Buffer(bpp * png.width * png.height);
 	var scanline;
 	var offset = 0;
 

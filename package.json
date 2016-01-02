@@ -6,13 +6,12 @@
   "repository": {
     "url": "git://github.com/arian/pngjs.git"
   },
+  "scripts": {
+    "build": "browserify ./PNGReader.js -s PNGReader -o html/png.js"
+  },
   "main": "PNGReader.js",
   "dependencies": {},
   "devDependencies": {
-    "wrapup": "0.9.10"
-  },
-  "optionalDependencies": {},
-  "engines": {
-    "node": "*"
+    "browserify": "^12.0.1"
   }
 }
