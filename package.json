@@ -6,6 +6,7 @@
   "repository": {
     "url": "git://github.com/arian/pngjs.git"
   },
+  "license": "MIT",
   "scripts": {
     "build": "browserify ./PNGReader.js -s PNGReader -o html/png.js"
   },
