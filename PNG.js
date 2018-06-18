@@ -17,6 +17,7 @@ var PNG = function(){
 
 	this.palette = null;
 	this.pixels = null;
+	this.trns = null;
 
 };
 
@@ -118,6 +119,10 @@ PNG.prototype.setInterlaceMethod = function(interlaceMethod){
 	this.interlaceMethod = interlaceMethod;
 };
 
+PNG.prototype.setTRNS = function(trns) {
+	this.trns = trns;
+};
+
 PNG.prototype.setPalette = function(palette){
 	if (palette.length % 3 !== 0){
 		throw new Error("incorrect PLTE chunk length");
@@ -147,11 +152,16 @@ PNG.prototype.getPixel = function(x, y){
 	switch (this.colorType){
 		case 0: return [pixels[i], pixels[i], pixels[i], 255];
 		case 2: return [pixels[i], pixels[i + 1], pixels[i + 2], 255];
-		case 3: return [
+		case 3:
+			var alpha = 255;
+			if (this.trns != null && this.trns[pixels[i]] != null) {
+				alpha = this.trns[pixels[i]];
+			}
+			return [
 			this.palette[pixels[i] * 3 + 0],
 			this.palette[pixels[i] * 3 + 1],
 			this.palette[pixels[i] * 3 + 2],
-			255];
+			alpha];
 		case 4: return [pixels[i], pixels[i], pixels[i], pixels[i + 1]];
 		case 6: return [pixels[i], pixels[i + 1], pixels[i + 2], pixels[i + 3]];
 	}

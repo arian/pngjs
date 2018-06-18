@@ -117,6 +117,7 @@ PNGReader.prototype.decodeChunk = function(){
 		case 'IHDR': this.decodeIHDR(chunk); break;
 		case 'PLTE': this.decodePLTE(chunk); break;
 		case 'IDAT': this.decodeIDAT(chunk); break;
+		case 'tRNS': this.decodeTRNS(chunk); break;
 		case 'IEND': this.decodeIEND(chunk); break;
 	}
 
@@ -163,6 +164,13 @@ PNGReader.prototype.decodePLTE = function(chunk){
 PNGReader.prototype.decodeIDAT = function(chunk){
 	// multiple IDAT chunks will concatenated
 	this.dataChunks.push(chunk);
+};
+
+/**
+ * https://www.w3.org/TR/PNG/#11tRNS
+ */
+PNGReader.prototype.decodeTRNS = function(chunk) {
+	this.png.setTRNS(chunk);
 };
 
 /**
