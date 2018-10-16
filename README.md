@@ -45,6 +45,7 @@ from the image.
 png.getWidth();
 png.getHeight();
 png.getPixel(x, y); // [red, blue, green, alpha]
+png.getRGBA8Array(); // [r1, g1, b1, a1, r2, b2, g2, a2, ... ] - Same as canvas.getImageData
 // but also
 png.getBitDepth();
 png.getColorType();
